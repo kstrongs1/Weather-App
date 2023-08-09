@@ -11,14 +11,16 @@
         @keypress="fetchWeather"
       />
 
-      <button type="button" class="uibutton" @click="isActive = !isActive">Celcius
-      </button>
+      <!-- <button @click='varcelsius' class='uibutton'>Toggle Units</button> -->
 
-      <div>
-        <p>Your current location is: {{ city }} in {{region}}, {{country}}.</p>
-      </div>
-
+      <button @click='convertTempuratureUnit(weather.main.temp, "C")' class='uibutton'>Test</button>
+      <button @click='convertTempuratureUnit(weather.main.temp, "F")' class='uibutton'>Test</button>
        </div>
+
+       <div class='current_location'>
+        <p v-if="shouldHideCurrentLocation">Your current location is: {{ city }} in {{region}}, {{country}}.</p>
+        <p :style="{color: 'red'}">{{ errorMessage }}</p>
+      </div>
 
        <div class="weather-wrap" v-if="(typeof weather.main != 'undefined')">
         <div class="location-box">
@@ -30,14 +32,19 @@
 
         <div class="weather-box">
           <div class="temp">
-            {{ Math.round(weather.main.temp) }}°f</div>
+            {{ Math.round(weather.main.temp) }}°f/{{Math.round(temperatureInCelcius) }}°c </div>
           <!-- <div class="altemp">{{ Math.round(weather.main.temp)&units==metric }}°c</div> -->
           <div class="weather">{{ weather.weather[0].main }}</div>
+
+          <!-- <div class="weather2">{{Math.round(temperatureInCelcius) }}°c</div> -->
         </div>
        </div>
        <div class="error" v-else>
         There is an error
        </div>
+       <!-- <p>Computed shouldHideCurrentLocation: {{ shouldHideCurrentLocation }}</p>
+       <p>City: {{ city }}</p>
+       <p>Query: {{ query }}</p> -->
     </main>
   </div>
 </template>
@@ -55,6 +62,9 @@ export default {
       city: '',
       region: '',
       country: '',
+      errorMessage: '',
+      temperatureInCelcius: '',
+      temperatureInF: ''
     }
   },
   methods: {
@@ -85,29 +95,43 @@ export default {
     },
 
     async getGeolocationInformation() {
-    const API_KEY = '15a3076d332a4c8f85bddf4c6dbf7b7d';
-    const API_URL = 'https://ipgeolocation.abstractapi.com/v1/?api_key=15a3076d332a4c8f85bddf4c6dbf7b7d' + API_KEY;
-    const apiResponse = await fetch(API_URL);
-    const data = await apiResponse.json();
-    const {city, country, region} = data;
-    this.city = city;
-    this.region = region;
-    this.country = country;
-   },
-   mounted () {
-    this.getGeolocationInformation();
- }
+      const API_KEY = '15a3076d332a4c8f85bddf4c6dbf7b7d';
+      const API_URL = 'https://ipgeolocation.abstractapi.com/v1/?api_key=' + API_KEY;
+      try {
+        this.errorMessage = '';
+        const apiResponse = await fetch(API_URL);
+        const data = await apiResponse.json();
+        const {city, country, region, } = data;
+        this.city = city;
+        this.region = region;
+        this.country = country;
+      } catch (error) {
+        this.errorMessage = error.message;
+      }
+    },
+    convertTempuratureUnit(value, toUnit) {
+      // from F to C
+      if (toUnit === 'C') {
+        console.info((value-32)/1.8)
+        this.temperatureInCelcius = (value-32)/1.8
+        return (value-32)/1.8
+      } else if (toUnit === 'F') {
+        // from C to F
+        this.temperatureInF = value*1.8 + 32
+        console.info(value*1.8 + 32)
+        return value*1.8 + 32
+      }
+    }
  },
-
-
-    //Farenheight to celsius method
-    // varcelsius () {
-    //   var F = Math.round(weather.main.temp);
-    //   var C = (( F - 32)/ 1.8);
-    //   return C;
-    // },
+ computed: {
+      shouldHideCurrentLocation () {
+        return this.city.split(" ").join("") !== this.query.split(" ").join("").toLowerCase()
+    }
+  },
+ mounted () {
+  this.getGeolocationInformation();
+  }
 }
-
 </script>
 
 <style>
@@ -215,6 +239,7 @@ main {
   font-size: 48px;
   font-style: italic;
   text-shadow: 3px 6px rgba(0, 0, 0, 0.25);
+  display: none;
 }
 
 .uibutton {
@@ -245,4 +270,29 @@ main {
   text-shadow: 1px 3px rgba(0, 0, 0, 0.25);
 }
 
+.current_location {
+  color: #FFF;
+  font-size: 32px;
+  font-weight: 500;
+  text-align: center;
+  text-shadow: 1px 3px rgba(0, 0, 0, 0.25);
+  display: block;
+}
+
+.weather-box .weather2 {
+  display: inline-block;
+  padding: 10px 25px;
+  color: #FFF; 
+  font-size: 102px;
+  font-weight: 900;
+
+  text-shadow: 3px 6px rgba(0, 0, 0, 0.25);
+  background-color: rgba(255, 255, 255, 0.25);
+  border-radius: 16px;
+  margin: 30px 0px;
+
+  box-shadow: 3px 6px rgba(0, 0, 0, 0.25);
+}
 </style>
+
+
